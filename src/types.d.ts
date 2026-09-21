@@ -13,6 +13,18 @@ interface AssociationStatus {
   executablePath?: string;
 }
 
+interface UpdateState {
+  status: 'idle' | 'checking' | 'available' | 'downloading' | 'ready' | 'current' | 'error';
+  supported: boolean;
+  channel: 'latest' | 'lite';
+  version: string | null;
+  percent: number;
+  transferred: number;
+  total: number;
+  message: string;
+  installDirectory: string;
+}
+
 interface OfficeFileBase {
   path: string;
   name: string;
@@ -84,7 +96,12 @@ interface Window {
     registerAssociations(): Promise<AssociationStatus>;
     unregisterAssociations(): Promise<AssociationStatus>;
     openDefaultApps(): Promise<void>;
-    getAppInfo(): Promise<{ version: string; packaged: boolean; executablePath: string; portable: boolean }>;
+    getAppInfo(): Promise<{ version: string; packaged: boolean; executablePath: string; portable: boolean; updateCapable: boolean; updateChannel: 'latest' | 'lite'; installationDirectory: string; userDataDirectory: string }>;
+    getUpdateState(): Promise<UpdateState>;
+    checkForUpdates(): Promise<UpdateState>;
+    downloadUpdate(): Promise<UpdateState>;
+    installUpdate(): Promise<boolean>;
+    onUpdateState(callback: (state: UpdateState) => void): () => void;
     onOpenFiles(callback: (paths: string[]) => void): () => void;
     onRequestClose(callback: () => void): () => void;
     onFullscreenChanged(callback: (enabled: boolean) => void): () => void;

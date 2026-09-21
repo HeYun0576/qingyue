@@ -18,10 +18,10 @@ Windows x64 portable packages:
 
 | Edition | Fast portable ZIP — recommended | Single-file portable EXE |
 | --- | --- | --- |
-| Full 1.3.3 | [Download ZIP](https://github.com/HeYun0576/qingyue/releases/download/v1.3.3/QingYue-1.3.3-Fast-Portable-x64.zip) | [Download EXE](https://github.com/HeYun0576/qingyue/releases/download/v1.3.3/QingYue-Markdown-1.3.3-Portable-x64.exe) |
-| Lite 0.1.1 | [Download ZIP](https://github.com/HeYun0576/qingyue/releases/download/lite-v0.1.1/QingYue-Lite-0.1.1-Fast-Portable-x64.zip) | [Download EXE](https://github.com/HeYun0576/qingyue/releases/download/lite-v0.1.1/QingYue-Lite-0.1.1-Portable-x64.exe) |
+| Full 1.3.4 | [Download ZIP](https://github.com/HeYun0576/qingyue/releases/download/v1.3.4/QingYue-1.3.4-Fast-Portable-x64.zip) | [Download EXE](https://github.com/HeYun0576/qingyue/releases/download/v1.3.4/QingYue-Markdown-1.3.4-Portable-x64.exe) |
+| Lite 0.1.2 | [Download ZIP](https://github.com/HeYun0576/qingyue/releases/download/lite-v0.1.2/QingYue-Lite-0.1.2-Fast-Portable-x64.zip) | [Download EXE](https://github.com/HeYun0576/qingyue/releases/download/lite-v0.1.2/QingYue-Lite-0.1.2-Portable-x64.exe) |
 
-Extract the ZIP to a permanent folder and run `QingYue.exe` or `QingYueLite.exe`. ZIP packages avoid the single-file EXE's extraction step on each cold launch. Both formats are portable, not installers.
+Extract the ZIP to a permanent folder and run `QingYue.exe` or `QingYueLite.exe`. ZIP packages avoid the single-file EXE's extraction step on each cold launch. The downloads listed above are the current portable releases; the source also supports NSIS installed builds for future releases.
 
 [All releases](https://github.com/HeYun0576/qingyue/releases) · [SHA-256 checksums](releases/SHA256SUMS.txt) · [Archive notes](releases/README.md)
 
@@ -54,7 +54,7 @@ Choose light, dark, eye-comfort, paper, or system-following themes. Adjust readi
 
 ## Full or Lite?
 
-| Capability | Full 1.3.3 | Lite 0.1.1 |
+| Capability | Full 1.3.4 | Lite 0.1.2 |
 | --- | --- | --- |
 | Markdown, text, JSON/YAML and source-file editing | Yes | Yes |
 | Tabs, folder search, outline, themes, bookmarks and annotations | Yes | Yes |
@@ -83,7 +83,7 @@ Full edition data lives beside the application in `QingYue-Data`; Lite uses `Qin
 - Lite text files are limited to 32 MB; preview is disabled above 8 MB. Full edition can open text up to 256 MB after confirmation in large-file mode. Large files do not retain every normal editing/preview feature.
 - Speech voices come from Windows. Availability and voice quality depend on installed voices; no bundled neural TTS engine is claimed.
 - Documents are processed locally. Remote images/audio referenced in a document and external links can still access the network and may be unavailable offline.
-- Historical versions 1.0.0–1.3.2 are original **binary archives only**. Their `archive-v*` tags contain an archive catalog, not original source snapshots. `v1.3.3` and `lite-v0.1.1` point to the actual shared source.
+- Historical versions 1.0.0–1.3.2 are original **binary archives only**. Their `archive-v*` tags contain an archive catalog, not original source snapshots. `v1.3.4` and `lite-v0.1.2` point to the current shared source.
 
 ## Development
 
@@ -94,19 +94,23 @@ pnpm install
 pnpm dev:app
 ```
 
-Check and build the Full portable EXE:
+Check and build Full portable and installed editions:
 
 ```powershell
 pnpm dist:portable
+pnpm dist:installer
 ```
 
-Build Lite:
+Build Lite portable and installed editions:
 
 ```powershell
-pnpm build:lite
-pnpm stage:lite
-pnpm exec electron-builder --projectDir release/lite-stage --win portable --x64 --publish never
+pnpm dist:lite:portable
+pnpm dist:lite:installer
+pnpm dist:fast
+pnpm dist:lite:fast
 ```
+
+Installed editions use separate Full (`latest.yml`) and Lite (`lite.yml`) channels. They update in place, prefer differential block downloads, fall back to the complete Setup package, and keep user settings outside the installation directory. See [update packaging notes](docs/UPDATES.md).
 
 ZIP releases are archives of the corresponding packaged application directories. See the [Chinese documentation](README.md) for the full feature list and more detailed notes.
 

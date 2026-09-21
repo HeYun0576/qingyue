@@ -63,7 +63,7 @@ async function publish(release) {
   }
   const sums = `SHA256SUMS-${release.tag}.txt`;
   if (!remote.assets.some(item => item.name === sums)) await gh('release', 'upload', release.tag, path.join(staging, sums), '--repo', repo);
-  if (remote.draft) await gh('release', 'edit', release.tag, '--repo', repo, '--draft=false', release.tag === 'v1.3.3' ? '--latest=true' : '--latest=false');
+  if (remote.draft) await gh('release', 'edit', release.tag, '--repo', repo, '--draft=false', release.tag === 'v1.3.4' ? '--latest=true' : '--latest=false');
   remote = await getRelease(release.tag);
   if (remote.draft) throw new Error(`Release still draft: ${release.tag}`);
   for (const asset of release.assets) checkAsset(remote.assets.find(item => item.name === asset.filename) || {}, asset);

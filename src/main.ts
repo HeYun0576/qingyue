@@ -110,6 +110,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="outline-header"><div class="outline-title">文档目录</div><button class="outline-close" id="outline-close" aria-label="关闭目录">${icons.close}</button></div>
         <nav id="outline-list"></nav>
       </aside>
+      <div class="outline-resizer" id="outline-resizer" role="separator" aria-label="调整目录宽度" aria-orientation="vertical" aria-valuemin="180" aria-valuemax="520" tabindex="0" title="左右拖动调整目录宽度"></div>
       <section class="editor-pane" aria-label="文件编辑器"><div id="editor"></div></section>
       <div class="splitter" id="splitter" role="separator" aria-orientation="vertical"></div>
       <section class="preview-pane" aria-label="Markdown 预览">
@@ -146,11 +147,12 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div class="modal-backdrop" id="settings-modal" hidden>
     <section class="modal settings-card" role="dialog" aria-modal="true" aria-labelledby="settings-title">
       <button class="modal-close" id="settings-close" aria-label="关闭">${icons.close}</button>
-      <div class="settings-heading"><div class="modal-symbol brand-symbol">${icons.logo}</div><div><h2 id="settings-title">便携版与文件关联</h2><p>无需安装，数据和程序可以一起携带。</p></div></div>
+      <div class="settings-heading"><div class="modal-symbol brand-symbol">${icons.logo}</div><div><h2 id="settings-title">轻阅设置</h2><p>便携版免安装；安装版支持原目录增量更新。</p></div></div>
       <div class="settings-row"><div><h3>资源管理器“打开方式”</h3><p id="association-description">正在检查注册状态…</p></div><button class="button primary" id="association-button">注册文件关联</button></div>
       <div class="extension-list"><span>Markdown</span><span>JSON / YAML</span>${__LITE__ ? '' : '<span>Word / Excel</span>'}<span>代码文件</span><span>TXT / LOG</span><span>CSV / 配置</span></div>
       <div class="settings-note">${icons.info}<p>注册只写入当前 Windows 用户，不需要管理员权限。BAT、CMD、PowerShell 等可执行脚本受安全保护，不会被轻阅注册或改变双击执行行为；仍可从轻阅内部打开编辑。</p></div>
       <div class="settings-footer"><button class="button ghost" id="default-apps-button">打开系统默认应用设置</button><span id="app-version"></span></div>
+      <div class="settings-row update-settings-row"><div><h3>软件更新</h3><p id="update-description">正在读取更新方式…</p><div class="update-progress" id="update-progress" hidden><span></span></div></div><button class="button ghost" id="update-button">检查更新</button></div>
       <div class="appearance-settings">
         <label>阅读主题<select id="theme-select"><option value="system">跟随系统</option><option value="light">明亮</option><option value="dark">深色</option><option value="eye">护眼</option><option value="paper">纸张</option></select></label>
         <label>字号<input id="font-size-range" type="range" min="13" max="22" value="15"><span id="font-size-value">15px</span></label>
@@ -159,9 +161,9 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <div class="startup-settings">
         <h3>启动与打开</h3>
         <label>Markdown 默认模式<select id="default-view-select"><option value="preview">阅读</option><option value="edit">编辑</option><option value="split">分栏</option></select></label>
-        <label>启动时<select id="startup-mode-select"><option value="empty">全新打开（无文件）</option><option value="blank">新建空白 Markdown</option><option value="restore">恢复上次标签</option></select></label>
-        <label class="checkbox-setting"><input type="checkbox" id="remember-folder-check"> 记住上次文件夹；关闭时每次启动不打开文件夹</label>
-        <p>双击文件始终优先显示该文件。全新/空白启动时不额外恢复历史标签；旧快照可手动找回。</p>
+        <label>启动时<select id="startup-mode-select"><option value="restore">恢复上次状态（推荐）</option><option value="empty">全新打开（无文件）</option><option value="blank">新建空白 Markdown</option></select></label>
+        <label class="checkbox-setting"><input type="checkbox" id="remember-folder-check"> 记住上次文件夹及打开 / 关闭状态</label>
+        <p>默认恢复标签、当前文档、阅读位置、分栏比例、目录宽度及侧栏状态。双击文件时仍优先显示该文件。</p>
         <div><button class="button primary" id="save-startup-settings">保存设置</button><button class="button ghost" id="restore-previous-session">恢复上次标签</button><button class="button ghost" id="clear-project">关闭并忘记文件夹</button></div>
       </div>
       <div class="settings-row shortcut-settings-row"><div><h3>快捷键</h3><p>可修改应用内快捷键，避开系统、输入法或其他软件占用的组合。</p></div><button class="button ghost" id="shortcut-settings-button">自定义快捷键</button></div>
@@ -185,6 +187,7 @@ const preview = document.querySelector<HTMLElement>('#preview')!;
 const previewScroll = document.querySelector<HTMLElement>('#preview-scroll')!;
 const outlinePanel = document.querySelector<HTMLElement>('#outline-panel')!;
 const outlineList = document.querySelector<HTMLElement>('#outline-list')!;
+const outlineResizer = document.querySelector<HTMLElement>('#outline-resizer')!;
 const splitter = document.querySelector<HTMLElement>('#splitter')!;
 const revealButton = document.querySelector<HTMLButtonElement>('#reveal-button')!;
 const formatButton = document.querySelector<HTMLButtonElement>('#format-button')!;
@@ -262,6 +265,10 @@ let activeSheetIndex = 0;
 let excelChanges = new Map<string, ExcelChange>();
 let previewZoom = Math.min(2.5, Math.max(.6, Number(localStorage.getItem('qingyue-preview-zoom')) || 1));
 let officeZoom = Math.min(2.5, Math.max(.6, Number(localStorage.getItem('qingyue-office-zoom')) || 1));
+const OUTLINE_WIDTH_MIN = 180;
+const OUTLINE_WIDTH_MAX = 520;
+let outlineWidthPreference = Math.min(OUTLINE_WIDTH_MAX, Math.max(OUTLINE_WIDTH_MIN, Number(localStorage.getItem('qingyue-outline-width')) || 240));
+let editorRatio = Math.min(.72, Math.max(.28, Number(localStorage.getItem('qingyue-editor-ratio')) || .5));
 let tabs: TabState[] = [];
 let activeTabId = '';
 let startupSettings: StartupSettings = readStartupSettings(localStorage);
@@ -282,6 +289,8 @@ let annotationDecorations: monaco.editor.IEditorDecorationsCollection | null = n
 let renderTimer = 0;
 let confirmResolver: ((choice: DestructiveChoice) => void) | null = null;
 let activeUtilityCleanup: (() => void) | null = null;
+let lastUpdateState: UpdateState | null = null;
+let lastAppInfo: Awaited<ReturnType<typeof window.qingyue.getAppInfo>> | null = null;
 
 type ShortcutCommand = { id: string; label: string; defaultShortcut: string };
 const shortcutCommands: ShortcutCommand[] = [
@@ -585,7 +594,13 @@ async function closeTab(id: string) {
 function serializeSession() {
   captureActiveTab();
   return {
-    version: 1, activeTabId, projectRoot, savedAt: Date.now(),
+    version: 2, activeTabId, projectRoot, savedAt: Date.now(),
+    projectOpen: projectPanel.classList.contains('open'),
+    outlineOpen: outlinePanel.classList.contains('open'),
+    outlineWidth: outlineWidthPreference,
+    outlineScrollTop: outlinePanel.scrollTop,
+    projectScrollTop: fileTree.scrollTop,
+    editorRatio,
     tabs: tabs.map((tab) => ({
       id: tab.id, kind: tab.kind, path: tab.path, name: tab.name, encoding: tab.encoding, dirty: tab.dirty,
       largeMode: tab.largeMode,
@@ -900,12 +915,43 @@ function buildOutline() {
   });
 }
 
+function maximumOutlineWidth() {
+  const projectWidth = workspaceElement.classList.contains('project-open') ? projectPanel.offsetWidth : 0;
+  const available = workspaceElement.clientWidth ? workspaceElement.clientWidth - projectWidth - 420 : OUTLINE_WIDTH_MAX;
+  return Math.max(OUTLINE_WIDTH_MIN, Math.min(OUTLINE_WIDTH_MAX, available));
+}
+
+function renderOutlineWidth() {
+  const visibleWidth = Math.min(outlineWidthPreference, maximumOutlineWidth());
+  workspaceElement.style.setProperty('--outline-width', `${visibleWidth}px`);
+  outlineResizer.setAttribute('aria-valuenow', String(Math.round(visibleWidth)));
+  outlineResizer.setAttribute('aria-valuemax', String(Math.round(maximumOutlineWidth())));
+  requestAnimationFrame(() => editor.layout());
+}
+
+function setOutlineWidth(value: number, persist = true) {
+  const requested = Math.round(Math.min(OUTLINE_WIDTH_MAX, Math.max(OUTLINE_WIDTH_MIN, value)));
+  outlineWidthPreference = persist ? Math.min(requested, maximumOutlineWidth()) : requested;
+  if (persist) localStorage.setItem('qingyue-outline-width', String(outlineWidthPreference));
+  renderOutlineWidth();
+  scheduleSessionSave();
+}
+
+function setEditorRatio(value: number, persist = true) {
+  editorRatio = Math.min(.72, Math.max(.28, value));
+  appShell.style.setProperty('--editor-ratio', `${editorRatio * 100}%`);
+  if (persist) localStorage.setItem('qingyue-editor-ratio', String(editorRatio));
+  requestAnimationFrame(() => editor.layout());
+  scheduleSessionSave();
+}
+
 function setOutlineOpen(open: boolean) {
   outlinePanel.classList.toggle('open', open);
   workspaceElement.classList.toggle('outline-open', open);
   outlinePanel.setAttribute('aria-hidden', String(!open));
   document.querySelector<HTMLButtonElement>('#outline-button')!.classList.toggle('active', open);
-  requestAnimationFrame(() => editor.layout());
+  renderOutlineWidth();
+  scheduleSessionSave();
 }
 
 function updateActiveOutlineItem() {
@@ -1357,17 +1403,50 @@ async function showSettings() {
   const description = document.querySelector<HTMLElement>('#association-description')!;
   const button = document.querySelector<HTMLButtonElement>('#association-button')!;
   try {
-    const [status, info] = await Promise.all([window.qingyue.getAssociationStatus(), window.qingyue.getAppInfo()]);
+    const [status, info, update] = await Promise.all([window.qingyue.getAssociationStatus(), window.qingyue.getAppInfo(), window.qingyue.getUpdateState()]);
+    lastAppInfo = info;
     button.dataset.registered = String(status.registered);
     button.textContent = status.registered ? '移除文件关联' : '注册文件关联';
     button.classList.toggle('danger-quiet', status.registered);
     button.classList.toggle('primary', !status.registered);
-    description.textContent = status.registered ? '已注册。资源管理器右键“打开方式”中只显示“轻阅”，可执行脚本除外。' : info.packaged ? '尚未注册。注册后可从资源管理器直接打开支持的安全文件类型。' : '开发模式不能注册，请先生成便携版 EXE。';
+    description.textContent = status.registered ? '已注册。资源管理器右键“打开方式”中只显示“轻阅”，可执行脚本除外。' : info.packaged ? '尚未注册。注册后可从资源管理器直接打开支持的安全文件类型。' : '开发模式不能注册，请先生成便携版或安装版。';
     button.disabled = !info.packaged;
-    document.querySelector<HTMLElement>('#app-version')!.textContent = `轻阅 ${info.version} · ${info.portable ? '便携运行' : info.packaged ? '已打包' : '开发模式'}`;
+    document.querySelector<HTMLElement>('#app-version')!.textContent = `${__LITE__ ? '轻阅 Lite' : '轻阅'} ${info.version} · ${info.portable ? '便携运行' : info.updateCapable ? '安装版' : '开发模式'}`;
+    renderUpdateState(update);
   } catch (error) {
     description.textContent = error instanceof Error ? error.message : String(error);
   }
+}
+
+function updateBytes(value: number) {
+  if (!value) return '0 MB';
+  return `${(value / 1024 / 1024).toFixed(value > 100 * 1024 * 1024 ? 0 : 1)} MB`;
+}
+
+function renderUpdateState(state: UpdateState) {
+  lastUpdateState = state;
+  const description = document.querySelector<HTMLElement>('#update-description')!;
+  const button = document.querySelector<HTMLButtonElement>('#update-button')!;
+  const progress = document.querySelector<HTMLElement>('#update-progress')!;
+  const progressBar = progress.querySelector<HTMLElement>('span')!;
+  if (!state.supported) {
+    description.textContent = lastAppInfo?.portable
+      ? '便携版保留免安装方式，不自动覆盖；可前往发布页下载新版。'
+      : '开发模式不检查更新。安装版会识别当前目录并原位升级。';
+    button.textContent = lastAppInfo?.portable ? '查看新版本' : '检查更新';
+    button.disabled = !lastAppInfo?.portable;
+    button.dataset.action = lastAppInfo?.portable ? 'releases' : 'disabled';
+    progress.hidden = true;
+    return;
+  }
+  description.textContent = state.status === 'downloading' && state.total
+    ? `${state.message} · ${updateBytes(state.transferred)} / ${updateBytes(state.total)}`
+    : state.message || `安装目录：${state.installDirectory}；设置保存在独立数据目录，升级不会清空。`;
+  progress.hidden = state.status !== 'downloading';
+  progressBar.style.width = `${Math.max(0, Math.min(100, state.percent || 0))}%`;
+  button.disabled = state.status === 'checking' || state.status === 'downloading';
+  button.dataset.action = state.status === 'available' ? 'download' : state.status === 'ready' ? 'install' : 'check';
+  button.textContent = state.status === 'available' ? '下载更新' : state.status === 'ready' ? '重启并安装' : state.status === 'checking' ? '检查中…' : state.status === 'downloading' ? '下载中…' : '检查更新';
 }
 
 function showUtility(title: string) {
@@ -2281,7 +2360,8 @@ function setProjectOpen(open: boolean) {
   projectPanel.setAttribute('aria-hidden', String(!open));
   document.querySelector<HTMLButtonElement>('#project-button')!.classList.toggle('active', open);
   localStorage.setItem('qingyue-project-open', String(open));
-  requestAnimationFrame(() => editor.layout());
+  renderOutlineWidth();
+  scheduleSessionSave();
 }
 
 async function chooseProject() {
@@ -2361,7 +2441,29 @@ function applyAppearance() {
 
 systemThemeQuery.addEventListener('change', () => { if ((localStorage.getItem('qingyue-theme') || 'system') === 'system') applyAppearance(); });
 
-type SavedSession = { activeTabId?: string; projectRoot?: string; tabs?: Array<Record<string, unknown>> };
+type SavedSession = {
+  activeTabId?: string;
+  projectRoot?: string;
+  projectOpen?: boolean;
+  outlineOpen?: boolean;
+  outlineWidth?: number;
+  outlineScrollTop?: number;
+  projectScrollTop?: number;
+  editorRatio?: number;
+  tabs?: Array<Record<string, unknown>>;
+};
+
+function restoreWorkspaceState(session: SavedSession | null) {
+  if (Number.isFinite(session?.outlineWidth)) setOutlineWidth(Number(session!.outlineWidth), false);
+  else renderOutlineWidth();
+  if (Number.isFinite(session?.editorRatio)) setEditorRatio(Number(session!.editorRatio), false);
+  else setEditorRatio(editorRatio, false);
+  setOutlineOpen(Boolean(session?.outlineOpen && markdownDocument && tabs.length));
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    outlinePanel.scrollTop = Math.max(0, Number(session?.outlineScrollTop) || 0);
+    fileTree.scrollTop = Math.max(0, Number(session?.projectScrollTop) || 0);
+  }));
+}
 
 function showEmptyWorkspace() {
   editor.setModel(null);
@@ -2437,6 +2539,11 @@ async function restorePreviousSession() {
     await restoreSavedTabs(session);
     const selected = tabs.find((tab) => tab.id === session.activeTabId) || tabs[tabs.length - 1];
     if (selected) activateTab(selected.id);
+    if (startupSettings.rememberFolder && session.projectRoot) {
+      try { await loadProject(session.projectRoot); setProjectOpen(session.projectOpen !== false); }
+      catch { clearProject(); }
+    }
+    restoreWorkspaceState(session);
     renderTabs();
   } finally { restoringSession = false; scheduleSessionSave(); }
 }
@@ -2447,7 +2554,8 @@ async function restoreSession(initialPaths: string[]) {
   editor.setModel(null); initialModel?.dispose();
   try {
     const session = await window.qingyue.loadSession() as SavedSession | null;
-    if (startupSettings.startupMode === 'restore') await restoreSavedTabs(session);
+    const restoringPreviousState = startupSettings.startupMode === 'restore';
+    if (restoringPreviousState) await restoreSavedTabs(session);
     else await window.qingyue.archiveSession();
     if (initialPaths.length) await openExternalFiles(initialPaths);
     else if (tabs.length) activateTab(tabs.find((tab) => tab.id === session?.activeTabId)?.id || tabs[0].id);
@@ -2457,8 +2565,19 @@ async function restoreSession(initialPaths: string[]) {
     }
     if (startupSettings.rememberFolder) {
       const root = localStorage.getItem('qingyue-project-root') || session?.projectRoot;
-      if (root) { try { await loadProject(root); } catch { clearProject(); } }
+      if (root) {
+        try {
+          await loadProject(root);
+          const rememberedOpen = localStorage.getItem('qingyue-project-open');
+          const shouldOpen = restoringPreviousState && typeof session?.projectOpen === 'boolean'
+            ? session.projectOpen
+            : rememberedOpen !== 'false';
+          setProjectOpen(shouldOpen);
+        } catch { clearProject(); }
+      }
     }
+    if (restoringPreviousState) restoreWorkspaceState(session);
+    else { setOutlineOpen(false); renderOutlineWidth(); setEditorRatio(editorRatio, false); }
   } catch (error) {
     if (!tabs.length) showEmptyWorkspace();
     showToast('启动恢复失败，可从“历史”或“恢复上次标签”重试', 'error');
@@ -2489,6 +2608,7 @@ editor.onDidChangeModelContent(() => {
 
 editor.onDidChangeCursorPosition(({ position }) => {
   cursorStatus.textContent = `第 ${position.lineNumber} 行，第 ${position.column} 列`;
+  scheduleSessionSave();
 });
 
 editor.onDidScrollChange((event) => {
@@ -2517,7 +2637,10 @@ previewScroll.addEventListener('scroll', () => {
   const percent = Math.min(100, Math.max(0, (previewScroll.scrollTop / maximum) * 100));
   readingProgressBar.style.width = `${percent}%`;
   const tab = activeTab(); if (tab) tab.previewScrollTop = previewScroll.scrollTop;
+  scheduleSessionSave();
 }, { passive: true });
+outlinePanel.addEventListener('scroll', scheduleSessionSave, { passive: true });
+fileTree.addEventListener('scroll', scheduleSessionSave, { passive: true });
 previewScroll.addEventListener('wheel', (event) => {
   if (!event.ctrlKey || currentDocumentKind !== 'text' || currentView !== 'preview') return;
   event.preventDefault();
@@ -2544,6 +2667,7 @@ officeScroll.addEventListener('scroll', () => {
   const maximum = Math.max(1, officeScroll.scrollHeight - officeScroll.clientHeight);
   readingProgressBar.style.width = `${Math.min(100, Math.max(0, officeScroll.scrollTop / maximum * 100))}%`;
   const tab = activeTab(); if (tab) tab.previewScrollTop = officeScroll.scrollTop;
+  scheduleSessionSave();
 }, { passive: true });
 officeScroll.addEventListener('wheel', (event) => {
   if (!event.ctrlKey || currentDocumentKind !== 'docx') return;
@@ -2604,6 +2728,26 @@ document.querySelectorAll<HTMLButtonElement>('#confirm-modal [data-choice]').for
 document.querySelector('#settings-close')!.addEventListener('click', () => { settingsModal.hidden = true; });
 settingsModal.addEventListener('click', (event) => { if (event.target === settingsModal) settingsModal.hidden = true; });
 document.querySelector('#default-apps-button')!.addEventListener('click', () => window.qingyue.openDefaultApps());
+document.querySelector('#update-button')!.addEventListener('click', async () => {
+  const button = document.querySelector<HTMLButtonElement>('#update-button')!;
+  const action = button.dataset.action || 'check';
+  if (action === 'releases') return void window.qingyue.openExternal('https://github.com/HeYun0576/qingyue/releases');
+  if (action === 'disabled') return;
+  button.disabled = true;
+  try {
+    let state: UpdateState;
+    if (action === 'download') state = await window.qingyue.downloadUpdate();
+    else if (action === 'install') {
+      await window.qingyue.saveSession(serializeSession());
+      await window.qingyue.installUpdate();
+      return;
+    } else state = await window.qingyue.checkForUpdates();
+    renderUpdateState(state);
+  } catch (error) {
+    renderUpdateState(await window.qingyue.getUpdateState());
+    showToast(error instanceof Error ? error.message : String(error), 'error');
+  }
+});
 document.querySelector('#utility-close')!.addEventListener('click', () => { activeUtilityCleanup?.(); activeUtilityCleanup = null; utilityModal.hidden = true; });
 utilityModal.addEventListener('click', (event) => { if (event.target === utilityModal) { activeUtilityCleanup?.(); activeUtilityCleanup = null; utilityModal.hidden = true; } });
 document.querySelector<HTMLSelectElement>('#theme-select')!.addEventListener('change', (event) => { localStorage.setItem('qingyue-theme', (event.target as HTMLSelectElement).value); applyAppearance(); });
@@ -2622,6 +2766,36 @@ document.querySelector('#association-button')!.addEventListener('click', async (
   } finally { button.disabled = false; }
 });
 
+outlineResizer.addEventListener('pointerdown', (event) => {
+  if (!outlinePanel.classList.contains('open')) return;
+  event.preventDefault();
+  outlineResizer.setPointerCapture(event.pointerId);
+  outlineResizer.classList.add('dragging');
+  const panelLeft = outlinePanel.getBoundingClientRect().left;
+  const move = (moveEvent: PointerEvent) => setOutlineWidth(moveEvent.clientX - panelLeft);
+  const up = () => {
+    outlineResizer.classList.remove('dragging');
+    outlineResizer.removeEventListener('pointermove', move);
+    outlineResizer.removeEventListener('pointerup', up);
+    outlineResizer.removeEventListener('pointercancel', up);
+  };
+  outlineResizer.addEventListener('pointermove', move);
+  outlineResizer.addEventListener('pointerup', up);
+  outlineResizer.addEventListener('pointercancel', up);
+});
+
+outlineResizer.addEventListener('keydown', (event) => {
+  let next = outlineWidthPreference;
+  if (event.key === 'ArrowLeft') next -= 20;
+  else if (event.key === 'ArrowRight') next += 20;
+  else if (event.key === 'Home') next = OUTLINE_WIDTH_MIN;
+  else if (event.key === 'End') next = maximumOutlineWidth();
+  else return;
+  event.preventDefault(); event.stopPropagation(); setOutlineWidth(next);
+});
+
+window.addEventListener('resize', renderOutlineWidth);
+
 splitter.addEventListener('pointerdown', (event) => {
   if (currentView !== 'split') return;
   splitter.setPointerCapture(event.pointerId);
@@ -2630,8 +2804,7 @@ splitter.addEventListener('pointerdown', (event) => {
     const workspace = document.querySelector<HTMLElement>('.workspace')!;
     const sidebarWidth = (workspace.classList.contains('project-open') ? projectPanel.offsetWidth : 0) + (workspace.classList.contains('outline-open') ? outlinePanel.offsetWidth : 0);
     const availableWidth = Math.max(1, workspace.clientWidth - sidebarWidth);
-    const ratio = Math.min(.72, Math.max(.28, (moveEvent.clientX - workspace.getBoundingClientRect().left - sidebarWidth) / availableWidth));
-    appShell.style.setProperty('--editor-ratio', `${ratio * 100}%`);
+    setEditorRatio((moveEvent.clientX - workspace.getBoundingClientRect().left - sidebarWidth) / availableWidth);
   };
   const up = () => {
     splitter.classList.remove('dragging');
@@ -2701,9 +2874,12 @@ window.qingyue.onFullscreenChanged((enabled) => {
     applyView(viewBeforeFullscreen);
   }
 });
+window.qingyue.onUpdateState((state) => renderUpdateState(state));
 
 applyAppearance();
 setPreviewZoom(previewZoom);
+renderOutlineWidth();
+setEditorRatio(editorRatio, false);
 const startupReady = (async () => {
   const initialFiles = await window.qingyue.takeStartupFiles();
   await restoreSession(initialFiles);

@@ -18,6 +18,17 @@ test('outline is a left workspace drawer with independent scrolling', () => {
   const editorStart = source.indexOf('<section class="editor-pane"');
   assert.ok(workspaceStart < outlineStart && outlineStart < editorStart);
   assert.match(styles, /\.outline-panel\s*\{[^}]*inset:\s*0 auto 0 0[^}]*overflow-y:\s*auto/s);
+  assert.match(source, /id="outline-resizer"[^>]*role="separator"/);
+  assert.match(source, /setOutlineWidth\(moveEvent\.clientX - panelLeft\)/);
+  assert.match(styles, /\.outline-resizer[^}]*cursor:\s*col-resize/);
+});
+
+test('startup restores stable workspace state by default', () => {
+  assert.match(source, /version:\s*2[\s\S]*projectOpen:[\s\S]*outlineOpen:[\s\S]*outlineWidth:[\s\S]*editorRatio/);
+  assert.match(source, /restoreWorkspaceState\(session\)/);
+  assert.match(source, /恢复上次状态（推荐）/);
+  assert.match(source, /qingyue-editor-ratio/);
+  assert.match(source, /qingyue-outline-width/);
 });
 
 test('outline navigation synchronizes preview and editor source line', () => {

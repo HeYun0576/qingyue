@@ -26,16 +26,16 @@
 
 有两个版本：
 
-- **完整版 1.3.3**：包含更多工具，如 Word/Excel 轻量编辑、白板、思维导图、文件对比等。
-- **Lite 0.1.1**：去掉 Office 和重型工具，专注 Markdown、文本和代码文件的阅读编辑。
+- **完整版 1.3.4**：包含更多工具，如 Word/Excel 轻量编辑、白板、思维导图、文件对比等。
+- **Lite 0.1.2**：去掉 Office 和重型工具，专注 Markdown、文本和代码文件的阅读编辑。
 
 也说明几个边界：Lite 仍基于 Electron，不是几 MB 的原生程序；Office 是轻量模式，不替代完整 Word/Excel；朗读使用系统已安装语音。文档在本机处理，但文档中的远程图片、音频和外部链接仍可能联网。
 
 项目已按 MIT 协议开源，界面目前为中文，仓库另有英文介绍。
 
 - 项目主页：[HeYun0576/qingyue](https://github.com/HeYun0576/qingyue)
-- [完整版 1.3.3 下载](https://github.com/HeYun0576/qingyue/releases/tag/v1.3.3)
-- [Lite 0.1.1 下载](https://github.com/HeYun0576/qingyue/releases/tag/lite-v0.1.1)
+- [完整版 1.3.4 下载](https://github.com/HeYun0576/qingyue/releases/tag/v1.3.4)
+- [Lite 0.1.2 下载](https://github.com/HeYun0576/qingyue/releases/tag/lite-v0.1.2)
 
 欢迎试用后告诉我：你最在意的是阅读排版、启动速度，还是文件编辑体验？遇到问题可以直接提 [Issue](https://github.com/HeYun0576/qingyue/issues)。觉得有用的话，也欢迎点个 Star，方便以后找到它。
 

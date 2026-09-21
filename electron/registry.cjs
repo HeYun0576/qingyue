@@ -8,30 +8,42 @@ const { SUPPORTED_EXTENSIONS, PROTECTED_EXECUTABLE_EXTENSIONS, ASSOCIATION_EXTEN
 const execFileAsync = promisify(execFile);
 const CLASSES = 'HKCU\\Software\\Classes';
 const REG_FILE_CLASSES = 'HKEY_CURRENT_USER\\Software\\Classes';
+const REG_FILE_SOFTWARE = 'HKEY_CURRENT_USER\\Software';
 const { isLite, appName } = require('./edition.cjs');
 const PROG_ID = isLite ? 'QingYueLite.TextFile' : 'QingYue.TextFile';
 const APP_EXE = isLite ? 'QingYueLite.exe' : 'QingYue.exe';
 const CONTEXT_VERB = isLite ? 'QingYueLiteOpen' : 'QingYueOpen';
+const REGISTERED_APP = isLite ? 'QingYueLite' : 'QingYue';
+const CAPABILITIES_PATH = `Software\\${REGISTERED_APP}\\Capabilities`;
 const NATIVE_EXECUTION_CLASSES = new Map([['.bat', 'batfile'], ['.cmd', 'cmdfile']]);
 
 function openCommand(executablePath) {
   return `"${executablePath}" "%1"`;
 }
 
+function applicationExecutableName(executablePath) {
+  return path.basename(path.resolve(executablePath)) || APP_EXE;
+}
+
 function registryOperations(executablePath) {
   const command = openCommand(executablePath);
+  const applicationExe = applicationExecutableName(executablePath);
   const operations = [
     ['add', `${CLASSES}\\${PROG_ID}`, '/ve', '/d', appName + '文本文档', '/f'],
     ['add', `${CLASSES}\\${PROG_ID}\\DefaultIcon`, '/ve', '/d', `"${executablePath}",0`, '/f'],
     ['add', `${CLASSES}\\${PROG_ID}\\shell\\open\\command`, '/ve', '/d', command, '/f'],
-    ['add', `${CLASSES}\\Applications\\${APP_EXE}`, '/v', 'FriendlyAppName', '/d', appName, '/f'],
-    ['add', `${CLASSES}\\Applications\\${APP_EXE}\\shell\\open\\command`, '/ve', '/d', command, '/f'],
+    ['add', `${CLASSES}\\Applications\\${applicationExe}`, '/v', 'FriendlyAppName', '/d', appName, '/f'],
+    ['add', `${CLASSES}\\Applications\\${applicationExe}\\shell\\open\\command`, '/ve', '/d', command, '/f'],
+    ['add', 'HKCU\\Software\\RegisteredApplications', '/v', REGISTERED_APP, '/d', CAPABILITIES_PATH, '/f'],
+    ['add', `HKCU\\${CAPABILITIES_PATH}`, '/v', 'ApplicationName', '/d', appName, '/f'],
+    ['add', `HKCU\\${CAPABILITIES_PATH}`, '/v', 'ApplicationIcon', '/d', `"${executablePath}",0`, '/f'],
   ];
 
   for (const extension of ASSOCIATION_EXTENSIONS) {
     operations.push(
       ['add', `${CLASSES}\\${extension}\\OpenWithProgids`, '/v', PROG_ID, '/t', 'REG_NONE', '/d', '', '/f'],
-      ['add', `${CLASSES}\\Applications\\${APP_EXE}\\SupportedTypes`, '/v', extension, '/t', 'REG_SZ', '/d', '', '/f'],
+      ['add', `${CLASSES}\\Applications\\${applicationExe}\\SupportedTypes`, '/v', extension, '/t', 'REG_SZ', '/d', '', '/f'],
+      ['add', `HKCU\\${CAPABILITIES_PATH}\\FileAssociations`, '/v', extension, '/d', PROG_ID, '/f'],
       ['add', `${CLASSES}\\SystemFileAssociations\\${extension}\\shell\\${CONTEXT_VERB}`, '/ve', '/d', appName, '/f'],
       ['add', `${CLASSES}\\SystemFileAssociations\\${extension}\\shell\\${CONTEXT_VERB}`, '/v', 'Icon', '/d', `"${executablePath}"`, '/f'],
       ['add', `${CLASSES}\\SystemFileAssociations\\${extension}\\shell\\${CONTEXT_VERB}\\command`, '/ve', '/d', command, '/f'],
@@ -50,6 +62,7 @@ function regString(value) {
 
 function registrationFile(executablePath) {
   const executable = path.resolve(executablePath);
+  const applicationExe = applicationExecutableName(executable);
   const command = openCommand(executable);
   const lines = ['Windows Registry Editor Version 5.00', ''];
   const key = (name, values) => {
@@ -58,11 +71,21 @@ function registrationFile(executablePath) {
   key(`${REG_FILE_CLASSES}\\${PROG_ID}`, [`@=${regString(appName + '文本文档')}`]);
   key(`${REG_FILE_CLASSES}\\${PROG_ID}\\DefaultIcon`, [`@=${regString(`"${executable}",0`)}`]);
   key(`${REG_FILE_CLASSES}\\${PROG_ID}\\shell\\open\\command`, [`@=${regString(command)}`]);
-  key(`${REG_FILE_CLASSES}\\Applications\\${APP_EXE}`, [`"FriendlyAppName"=${regString(appName)}`]);
-  key(`${REG_FILE_CLASSES}\\Applications\\${APP_EXE}\\shell\\open\\command`, [`@=${regString(command)}`]);
+  key(`${REG_FILE_CLASSES}\\Applications\\${applicationExe}`, [
+    `"FriendlyAppName"=${regString(appName)}`,
+    `"ApplicationIcon"=${regString(`"${executable}",0`)}`,
+  ]);
+  key(`${REG_FILE_CLASSES}\\Applications\\${applicationExe}\\shell\\open\\command`, [`@=${regString(command)}`]);
+  key(`${REG_FILE_SOFTWARE}\\RegisteredApplications`, [`"${REGISTERED_APP}"=${regString(CAPABILITIES_PATH)}`]);
+  key(`${REG_FILE_SOFTWARE}\\${REGISTERED_APP}\\Capabilities`, [
+    `"ApplicationName"=${regString(appName)}`,
+    `"ApplicationDescription"=${regString(appName + ' 本地文档阅读编辑器')}`,
+    `"ApplicationIcon"=${regString(`"${executable}",0`)}`,
+  ]);
   for (const extension of ASSOCIATION_EXTENSIONS) {
     key(`${REG_FILE_CLASSES}\\${extension}\\OpenWithProgids`, [`"${PROG_ID}"=hex(0):`]);
-    key(`${REG_FILE_CLASSES}\\Applications\\${APP_EXE}\\SupportedTypes`, [`"${extension}"=""`]);
+    key(`${REG_FILE_CLASSES}\\Applications\\${applicationExe}\\SupportedTypes`, [`"${extension}"=""`]);
+    key(`${REG_FILE_SOFTWARE}\\${REGISTERED_APP}\\Capabilities\\FileAssociations`, [`"${extension}"=${regString(PROG_ID)}`]);
     key(`${REG_FILE_CLASSES}\\SystemFileAssociations\\${extension}\\shell\\${CONTEXT_VERB}`, [
       `@=${regString(appName)}`,
       `"Icon"=${regString(`"${executable}"`)}`,
@@ -73,7 +96,7 @@ function registrationFile(executablePath) {
     lines.push(
       `[-${REG_FILE_CLASSES}\\SystemFileAssociations\\${extension}\\shell\\${CONTEXT_VERB}]`, '',
       `[${REG_FILE_CLASSES}\\${extension}\\OpenWithProgids]`, `"${PROG_ID}"=-`, '',
-      `[${REG_FILE_CLASSES}\\Applications\\${APP_EXE}\\SupportedTypes]`, `"${extension}"=-`, '',
+      `[${REG_FILE_CLASSES}\\Applications\\${applicationExe}\\SupportedTypes]`, `"${extension}"=-`, '',
       `[HKEY_CURRENT_USER\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FileExts\\${extension}\\OpenWithProgids]`, `"${PROG_ID}"=-`, '',
     );
   }
@@ -81,16 +104,20 @@ function registrationFile(executablePath) {
   return `${lines.join('\r\n')}\r\n`;
 }
 
-function unregistrationFile() {
+function unregistrationFile(executablePath = APP_EXE) {
+  const applicationExe = applicationExecutableName(executablePath);
   const lines = ['Windows Registry Editor Version 5.00', '',
     `[-${REG_FILE_CLASSES}\\${PROG_ID}]`, '',
-    `[-${REG_FILE_CLASSES}\\Applications\\${APP_EXE}]`, '',
+    `[-${REG_FILE_CLASSES}\\Applications\\${applicationExe}]`, '',
+    `[-${REG_FILE_SOFTWARE}\\${REGISTERED_APP}\\Capabilities]`, '',
+    `[${REG_FILE_SOFTWARE}\\RegisteredApplications]`, `"${REGISTERED_APP}"=-`, '',
   ];
+  if (applicationExe.toLowerCase() !== APP_EXE.toLowerCase()) lines.push(`[-${REG_FILE_CLASSES}\\Applications\\${APP_EXE}]`, '');
   for (const extension of SUPPORTED_EXTENSIONS) {
     lines.push(
       `[-${REG_FILE_CLASSES}\\SystemFileAssociations\\${extension}\\shell\\${CONTEXT_VERB}]`, '',
       `[${REG_FILE_CLASSES}\\${extension}\\OpenWithProgids]`, `"${PROG_ID}"=-`, '',
-      `[${REG_FILE_CLASSES}\\Applications\\${APP_EXE}\\SupportedTypes]`, `"${extension}"=-`, '',
+      `[${REG_FILE_CLASSES}\\Applications\\${applicationExe}\\SupportedTypes]`, `"${extension}"=-`, '',
     );
   }
   return `${lines.join('\r\n')}\r\n`;
@@ -128,14 +155,14 @@ async function registerMarkdownShellNew() {
   await importRegistry(markdownShellNewFile(!hasDefault));
 }
 
-async function unregisterFileAssociations() {
+async function unregisterFileAssociations(executablePath = APP_EXE) {
   try {
     const { stdout } = await runReg(['query', `${CLASSES}\\.md\\ShellNew`, '/v', 'QingYueOwner']);
     if (stdout.trim().endsWith(PROG_ID)) {
       await importRegistry(['Windows Registry Editor Version 5.00', '', `[${REG_FILE_CLASSES}\\.md\\ShellNew]`, '"NullFile"=-', '"ItemName"=-', '"QingYueOwner"=-', ''].join('\r\n'));
     }
   } catch { /* Not owned by this edition; preserve it. */ }
-  await importRegistry(unregistrationFile());
+  await importRegistry(unregistrationFile(executablePath));
   return { registered: false };
 }
 
@@ -152,8 +179,11 @@ async function getAssociationStatus(executablePath) {
 module.exports = {
   PROG_ID,
   APP_EXE,
+  REGISTERED_APP,
+  CAPABILITIES_PATH,
   NATIVE_EXECUTION_CLASSES,
   openCommand,
+  applicationExecutableName,
   registryOperations,
   registrationFile,
   markdownShellNewFile,

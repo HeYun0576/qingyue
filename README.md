@@ -16,8 +16,8 @@ Portable, offline Markdown & text reader/editor for Windows — split-pane editi
 
 | 版本 | 极速便携 ZIP（推荐） | 单文件便携 EXE |
 | --- | --- | --- |
-| 完整版 1.3.3 | [下载 ZIP](https://github.com/HeYun0576/qingyue/releases/download/v1.3.3/QingYue-1.3.3-Fast-Portable-x64.zip) | [下载 EXE](https://github.com/HeYun0576/qingyue/releases/download/v1.3.3/QingYue-Markdown-1.3.3-Portable-x64.exe) |
-| 轻量版 0.1.1 | [下载 ZIP](https://github.com/HeYun0576/qingyue/releases/download/lite-v0.1.1/QingYue-Lite-0.1.1-Fast-Portable-x64.zip) | [下载 EXE](https://github.com/HeYun0576/qingyue/releases/download/lite-v0.1.1/QingYue-Lite-0.1.1-Portable-x64.exe) |
+| 完整版 1.3.4 | [下载 ZIP](https://github.com/HeYun0576/qingyue/releases/download/v1.3.4/QingYue-1.3.4-Fast-Portable-x64.zip) | [下载 EXE](https://github.com/HeYun0576/qingyue/releases/download/v1.3.4/QingYue-Markdown-1.3.4-Portable-x64.exe) |
+| 轻量版 0.1.2 | [下载 ZIP](https://github.com/HeYun0576/qingyue/releases/download/lite-v0.1.2/QingYue-Lite-0.1.2-Fast-Portable-x64.zip) | [下载 EXE](https://github.com/HeYun0576/qingyue/releases/download/lite-v0.1.2/QingYue-Lite-0.1.2-Portable-x64.exe) |
 
 两种形式均免安装，推荐将 ZIP 解压到固定目录后运行其中的 EXE。轻量版不含 Word/Excel 等重型功能，但仍携带 Electron 运行环境。
 
@@ -52,7 +52,7 @@ Portable, offline Markdown & text reader/editor for Windows — split-pane editi
 
 ## 选哪个版本？
 
-| 你需要的功能 | 完整版 1.3.3 | Lite 0.1.1 |
+| 你需要的功能 | 完整版 1.3.4 | Lite 0.1.2 |
 | --- | --- | --- |
 | Markdown / TXT / JSON / 代码文件阅读编辑 | ✓ | ✓ |
 | 标签、目录、搜索、书签批注、主题、朗读 | ✓ | ✓ |
@@ -66,17 +66,17 @@ Portable, offline Markdown & text reader/editor for Windows — split-pane editi
 
 如果轻阅对你有帮助，欢迎给项目一个 Star，或通过 [Issue](https://github.com/HeYun0576/qingyue/issues) 告诉我们哪里还可以做得更好。
 
-## 1.3.3 与 Lite 0.1.1
+## 1.3.4 与 Lite 0.1.2
 
-完整版 1.3.3 修复冷启动文件聚焦、目录遮挡和 Mermaid 文字缺失；新增默认阅读/编辑/分栏、无文档/空白文档/恢复历史三种启动策略、记住文件夹开关，以及桌面“新建 Markdown”。只保留标签栏的一个新建加号。
+完整版 1.3.4 与 Lite 0.1.2 新增可拖拽目录宽度和完整工作区恢复；修复 Lite 单文件便携版的 Windows 文件关联，并补齐默认应用能力注册。安装版支持识别原安装目录、覆盖升级和 blockmap 增量下载。
 
-默认采用“无文档启动 + 分栏打开 Markdown + 不记住文件夹”。设置中点击“保存启动设置”后生效。全新启动仍会保存上次标签快照，可从空白页或设置中的“恢复上次标签”找回。历史未保存文档不会被自动写回原文件。
+默认恢复退出前的标签页、当前文档、阅读布局、文件夹、目录开关与宽度、滚动位置和窗口状态。设置中仍可改为空白启动或新建空白文档，并可关闭文件夹记忆。历史未保存文档不会被自动写回原文件。
 
-Lite 0.1.1 保留 Markdown、TXT、JSON/YAML 和代码文件的文本阅读编辑、目录、标签、书签批注、朗读、搜索、主题和 PDF/HTML/MD/TXT/RTF 导出；不含 Word/Excel、白板、思维导图编辑器、图片编辑、对比、结构校验和格式化。使用精简原生文本编辑器，不带 Monaco 的 IDE 语法服务/代码补全。Markdown 预览仍有代码高亮、公式和 Mermaid 图表，图表模块遇到相应内容才加载。单个文本文件上限 32 MB，8 MB 以上关闭预览。
+Lite 0.1.2 保留 Markdown、TXT、JSON/YAML 和代码文件的文本阅读编辑、目录、标签、书签批注、朗读、搜索、主题和 PDF/HTML/MD/TXT/RTF 导出；不含 Word/Excel、白板、思维导图编辑器、图片编辑、对比、结构校验和格式化。使用精简原生文本编辑器，不带 Monaco 的 IDE 语法服务/代码补全。Markdown 预览仍有代码高亮、公式和 Mermaid 图表，图表模块遇到相应内容才加载。单个文本文件上限 32 MB，8 MB 以上关闭预览。
 
 完整版使用 `QingYue-Data`，轻量版使用 `QingYueLite-Data`，应用名、程序文件名和注册关联标识独立。两版可以共存，Windows 的默认打开程序由用户选择。
 
-更多说明见 [1.3.3 更新说明](RELEASE-1.3.3.md)。
+更多说明见 [1.3.4 更新说明](RELEASE-1.3.4.md)。
 
 ## 完整版已实现
 
@@ -125,22 +125,31 @@ pnpm install
 pnpm dev:app
 ```
 
-## 生成免安装便携版
+## 生成便携版与安装版
 
 ```powershell
 pnpm dist:portable
+pnpm dist:installer
+pnpm dist:lite:portable
+pnpm dist:lite:installer
+pnpm dist:fast
+pnpm dist:lite:fast
 ```
 
-发布页提供以下产物（上述命令生成完整版单文件 EXE，ZIP 为对应打包目录的压缩包）：
+便携版继续免安装；安装版使用 NSIS，支持选择安装目录、识别已有安装并在原目录覆盖升级。应用设置、自动恢复和历史版本放在独立数据目录，升级不会清空。
 
-- `release/QingYue-1.3.3-Fast-Portable-x64.zip`：推荐。只需解压一次，之后直接运行 `QingYue.exe`，双击文件启动更快；
-- `release/QingYue-Markdown-1.3.3-Portable-x64.exe`：单文件版，复制方便，但每次冷启动都需要先释放程序文件，速度会慢一些。
-- `release/QingYue-Lite-0.1.1-Fast-Portable-x64.zip`：轻量版极速包，解压运行 `QingYueLite.exe`。
-- `release/QingYue-Lite-0.1.1-Portable-x64.exe`：轻量版单文件包。
+发布页可同时提供以下产物：
 
-两种版本都免安装，完整版数据保存在程序旁的 `QingYue-Data` 文件夹，轻量版使用 `QingYueLite-Data`。移动程序后如曾注册文件关联，请在设置中先移除、再重新注册，使 Windows 指向新位置。
+- `release/QingYue-1.3.4-Fast-Portable-x64.zip`：推荐。只需解压一次，之后直接运行 `QingYue.exe`，双击文件启动更快；
+- `release/QingYue-Markdown-1.3.4-Portable-x64.exe`：单文件版，复制方便，但每次冷启动都需要先释放程序文件，速度会慢一些。
+- `release/QingYue-Lite-0.1.2-Fast-Portable-x64.zip`：轻量版极速包，解压运行 `QingYueLite.exe`。
+- `release/lite/QingYue-Lite-0.1.2-Portable-x64.exe`：轻量版单文件包。
+- `release/QingYue-Markdown-1.3.4-Setup-x64.exe`：完整版安装包，支持应用内增量更新；
+- `release/lite/QingYue-Lite-0.1.2-Setup-x64.exe`：轻量版安装包，使用独立更新通道。
 
-轻量版构建：`pnpm build:lite` → `pnpm stage:lite` → `pnpm exec electron-builder --projectDir release/lite-stage --win portable --x64 --publish never`。本地模块随应用打包，无须服务器、网络连接或首次下载。
+便携版数据保存在程序旁：完整版使用 `QingYue-Data`，轻量版使用 `QingYueLite-Data`。安装版数据保存在当前用户的 AppData 中，程序覆盖更新与卸载默认都不会删除这些数据。移动便携程序后如曾注册文件关联，请在设置中先移除、再重新注册，使 Windows 指向新位置。
+
+安装版在设置中由用户主动检查更新：优先依据 blockmap 下载差异块，差分不可用时回退到完整安装包。完整版使用 `latest.yml`，Lite 使用 `lite.yml`，不会互相升级。具体发布约束见 [更新与安装包说明](docs/UPDATES.md)。本地文档功能仍无需服务器、网络连接或首次下载。
 
 ## Office 轻量模式边界
 
@@ -161,6 +170,7 @@ Windows 10/11 为防止应用劫持默认程序，首次设为默认时仍需由
 ## 安全与隐私
 
 - 文档在本机读取、编辑和保存，无需云端账号；
+- 仅当安装版用户主动点击“检查更新”时访问 GitHub Releases；便携版不会后台检查或覆盖自身；
 - 文档中的远程图片、音频或外部链接可能产生网络访问，离线时这些远程内容可能不可用；
 - Markdown 原生 HTML 默认禁用，并在显示前再次清理；
 - 渲染进程启用上下文隔离、沙箱并关闭 Node.js 集成；

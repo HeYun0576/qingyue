@@ -4,14 +4,14 @@ export type StartupSettings = {
   rememberFolder: boolean;
 };
 
-export const defaultStartupSettings: StartupSettings = { defaultView: 'split', startupMode: 'empty', rememberFolder: false };
+export const defaultStartupSettings: StartupSettings = { defaultView: 'split', startupMode: 'restore', rememberFolder: true };
 
 export function normalizeStartupSettings(value: unknown): StartupSettings {
   const input = value && typeof value === 'object' ? value as Partial<StartupSettings> : {};
   return {
     defaultView: ['preview', 'edit', 'split'].includes(input.defaultView || '') ? input.defaultView! : 'split',
-    startupMode: ['empty', 'blank', 'restore'].includes(input.startupMode || '') ? input.startupMode! : 'empty',
-    rememberFolder: input.rememberFolder === true,
+    startupMode: ['empty', 'blank', 'restore'].includes(input.startupMode || '') ? input.startupMode! : defaultStartupSettings.startupMode,
+    rememberFolder: typeof input.rememberFolder === 'boolean' ? input.rememberFolder : defaultStartupSettings.rememberFolder,
   };
 }
 

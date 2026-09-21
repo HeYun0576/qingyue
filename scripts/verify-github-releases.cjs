@@ -21,7 +21,7 @@ async function api(endpoint, ...flags) {
   const warnings = [];
   if (repo.full_name !== catalog.repository || repo.private) issues.push('Repository is not the approved public repository.');
   if (repo.default_branch !== 'main') issues.push('Default branch is not main.');
-  if (latest.tag_name !== 'v1.3.3') issues.push('The latest release is not the current full edition.');
+  if (latest.tag_name !== 'v1.3.4') issues.push('The latest release is not the current full edition.');
   const releases = pages.flat();
   let binaries = 0;
   let verifiedDigests = 0;
